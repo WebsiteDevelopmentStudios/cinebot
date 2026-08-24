@@ -14,15 +14,21 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: "mistral",
-        messages: [systemPrompt, ...messages],
-        stream: true
+        messages: [systemPrompt, ...messages]
       })
     });
 
-    return new Response(response.body, {
-      headers: { "Content-Type": "text/event-stream" }
+    const data = await response.json();
+    
+    const reply = data.choices && data.choices[0] && data.choices[0].message 
+      ? data.choices[0].message.content 
+      : "Error: Could not get response from AI.";
+
+    return new Response(JSON.stringify({ message: reply }), {
+      headers: { "Content-Type": "application/json" }
     });
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-            }
+                           }
+  
