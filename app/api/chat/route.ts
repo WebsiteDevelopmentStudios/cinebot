@@ -22,7 +22,7 @@ export async function POST(req: Request) {
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant", 
+        model: "openai/gpt-oss-120b", 
         messages: [systemPrompt, ...messages]
       })
     });
@@ -43,4 +43,3 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ message: error.message }), { status: 500 });
   }
         }
-  
