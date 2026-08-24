@@ -6,6 +6,7 @@ type Message = {
   role: string;
   content: string;
   thinking: string;
+  code: string;
 };
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("uncle_ares_chat", JSON.stringify(messages));
@@ -29,13 +31,19 @@ export default function Home() {
     localStorage.removeItem("uncle_ares_chat");
   };
 
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isGenerating) return;
 
-    const userMessage: Message = { role: "user", content: input, thinking: "" };
+    const userMessage: Message = { role: "user", content: input, thinking: "", code: "" };
     const currentMessages = [...messages, userMessage];
     
-    // Remove the 'thinking' field before sending to Groq, because Groq doesn't know what to do with it
+    // Don't send 'thinking' or 'code' fields to the API
     const apiMessages = currentMessages.map(m => ({
       role: m.role,
       content: m.content
@@ -44,7 +52,7 @@ export default function Home() {
     setMessages(currentMessages);
     setInput("");
     setIsGenerating(true);
-    setActiveTab("thinking"); // Switch to thinking tab while waiting
+    setActiveTab("thinking");
 
     try {
       const response = await fetch("/api/chat", {
@@ -55,14 +63,38 @@ export default function Home() {
 
       const data = await response.json();
       
+      let rawReply = data.message || "(No text generated)";
+      let rawThinking = data.thinking || "";
+      let extractedCode = "";
+
+      // Extract code from triple backticks
+      const codeRegex = /```(?:[a-zA-Z]+\n)?([\s\S]*?)```/g;
+      let match;
+      while ((match = codeRegex.exec(rawReply)) !== null) {
+        extractedCode += match[1].trim() + "\n\n";
+      }
+      extractedCode = extractedCode.trim();
+
+      let finalContent = rawReply;
+      if (extractedCode) {
+        finalContent = rawReply.replace(codeRegex, "[See Code tab]").trim();
+      }
+      
       const assistantMessage: Message = { 
         role: "assistant", 
-        content: data.message || "(No code generated)",
-        thinking: data.thinking || "(No thoughts generated)"
+        content: finalContent,
+        thinking: rawThinking,
+        code: extractedCode
       };
       
       setMessages((prev) => [...prev, assistantMessage]);
-      setActiveTab("chat"); // Switch back to chat when done
+      
+      // Auto switch to code tab if code exists, otherwise chat
+      if (extractedCode) {
+        setActiveTab("code");
+      } else {
+        setActiveTab("chat");
+      }
 
     } catch (e) {
       console.error(e);
@@ -99,6 +131,12 @@ export default function Home() {
           >
             Thinking
           </button>
+          <button 
+            onClick={() => setActiveTab("code")}
+            className={`px-4 py-1 rounded-lg text-sm ${activeTab === 'code' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}
+          >
+            Code
+          </button>
         </div>
         
         <div className="flex-1 overflow-y-auto mb-4 p-4 bg-gray-900 rounded-lg border border-gray-800 min-h-0">
@@ -107,11 +145,35 @@ export default function Home() {
           ) : (
             messages.map((msg, idx) => (
               <div key={idx} className={`mb-4 p-3 rounded-lg ${msg.role === 'user' ? 'bg-blue-900 text-right' : 'bg-gray-800 text-left'}`}>
-                <pre className="whitespace-pre-wrap font-mono text-sm">
-                  {activeTab === 'thinking' 
-                    ? (msg.thinking || "(No thoughts generated)") 
-                    : msg.content}
-                </pre>
+                {activeTab === 'chat' && (
+                  <pre className="whitespace-pre-wrap font-mono text-sm">{msg.content}</pre>
+                )}
+                {activeTab === 'thinking' && (
+                  <pre className="whitespace-pre-wrap font-mono text-sm text-gray-400 italic">
+                    {msg.role === 'user' 
+                      ? msg.content 
+                      : (msg.thinking && msg.thinking.length > 0 ? msg.thinking : "(No thoughts generated)")}
+                  </pre>
+                )}
+                {activeTab === 'code' && (
+                  msg.code ? (
+                    <div>
+                      <div className="flex justify-end mb-2">
+                        <button 
+                          onClick={() => handleCopyCode(msg.code)}
+                          className="px-3 py-1 text-xs bg-blue-600 rounded hover:bg-blue-500"
+                        >
+                          {copied ? "Copied!" : "Copy Code"}
+                        </button>
+                      </div>
+                      <pre className="whitespace-pre-wrap font-mono text-sm bg-gray-950 p-3 rounded border border-gray-700">
+                        {msg.code}
+                      </pre>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center text-sm italic">(No code extracted)</p>
+                  )
+                )}
               </div>
             ))
           )}
@@ -141,5 +203,5 @@ export default function Home() {
       </div>
     </main>
   );
-                            }
-        
+            }
+    
