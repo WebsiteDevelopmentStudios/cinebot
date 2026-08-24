@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Message = {
   role: string;
@@ -8,9 +8,26 @@ type Message = {
 };
 
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  // Load chat history from local storage on page load
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("uncle_ares_chat");
+      if (saved) return JSON.parse(saved);
+    }
+    return [];
+  });
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Save messages to local storage every time they change
+  useEffect(() => {
+    localStorage.setItem("uncle_ares_chat", JSON.stringify(messages));
+  }, [messages]);
+
+  const handleClearChat = () => {
+    setMessages([]);
+    localStorage.removeItem("uncle_ares_chat");
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isGenerating) return;
@@ -41,11 +58,22 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-8 bg-gray-950 text-white">
-      <div className="w-full max-w-3xl flex flex-col h-screen">
-        <h1 className="text-3xl font-bold mb-4">⚡ Uncle Ares AI</h1>
+    <main className="flex h-[100dvh] flex-col items-center p-4 bg-gray-950 text-white">
+      <div className="w-full max-w-3xl flex flex-col flex-1 min-h-0">
+        <div className="flex justify-between items-center mb-4 shrink-0">
+          <h1 className="text-3xl font-bold">⚡ Uncle Ares AI</h1>
+          {messages.length > 0 && (
+            <button 
+              onClick={handleClearChat}
+              className="px-3 py-1 text-sm bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700"
+            >
+              Clear Chat
+            </button>
+          )}
+        </div>
         
-        <div className="flex-1 overflow-y-auto mb-4 p-4 bg-gray-900 rounded-lg border border-gray-800">
+        {/* This container flexes so the input stays at the bottom without scrolling the page */}
+        <div className="flex-1 overflow-y-auto mb-4 p-4 bg-gray-900 rounded-lg border border-gray-800 min-h-0">
           {messages.length === 0 ? (
             <p className="text-gray-500 text-center mt-20">Ask me to write any code...</p>
           ) : (
@@ -57,7 +85,8 @@ export default function Home() {
           )}
         </div>
 
-        <div className="flex gap-2">
+        {/* Input bar pinned to the bottom */}
+        <div className="flex gap-2 shrink-0">
           <textarea
             className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 focus:border-blue-500 outline-none resize-none"
             placeholder="e.g., Write a Python script to scrape a website."
@@ -81,5 +110,5 @@ export default function Home() {
       </div>
     </main>
   );
-    }
-      
+}
+
