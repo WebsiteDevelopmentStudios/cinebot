@@ -1,5 +1,6 @@
 export async function POST(req: Request) {
   const { messages } = await req.json();
+  const apiKey = "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";
 
   const systemPrompt = {
     role: "system",
@@ -7,39 +8,32 @@ export async function POST(req: Request) {
   };
 
   try {
-    const response = await fetch("https://api.pollinations.ai/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "openai", // GPT-4o-mini
-        messages: [systemPrompt, ...messages],
-        referrer: "cinebot-app"
+        model: "llama-3.1-8b-instant", 
+        messages: [systemPrompt, ...messages]
       })
     });
 
-    const text = await response.text();
-    let reply = "Error: Could not get response from AI.";
-
-    try {
-      const data = JSON.parse(text);
-      if (data.choices && data.choices[0] && data.choices[0].message) {
-        reply = data.choices[0].message.content;
-      } else {
-        reply = "AI returned unexpected JSON: " + JSON.stringify(data);
-      }
-    } catch {
-      if (text.length > 0) {
-        reply = text;
-      }
+    const data = await response.json();
+    
+    let reply = "Error: Could not get response from Groq.";
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      reply = data.choices[0].message.content;
+    } else if (data.error) {
+      reply = "AI Error: " + data.error.message;
     }
 
     return new Response(JSON.stringify({ message: reply }), {
       headers: { "Content-Type": "application/json" }
     });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ message: error.message }), { status: 500 });
   }
-    }
-      
+        }
+        
