@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 type Message = {
   role: string;
   content: string;
-  thinking?: string;
+  thinking: string;
 };
 
 export default function Home() {
@@ -18,7 +18,7 @@ export default function Home() {
   });
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"chat" | "thinking">("chat");
+  const [activeTab, setActiveTab] = useState("chat");
 
   useEffect(() => {
     localStorage.setItem("uncle_ares_chat", JSON.stringify(messages));
@@ -32,39 +32,33 @@ export default function Home() {
   const handleSend = async () => {
     if (!input.trim() || isGenerating) return;
 
-    const userMessage: Message = { role: "user", content: input };
+    const userMessage: Message = { role: "user", content: input, thinking: "" };
     const currentMessages = [...messages, userMessage];
+    
+    // Remove the 'thinking' field before sending to Groq, because Groq doesn't know what to do with it
+    const apiMessages = currentMessages.map(m => ({
+      role: m.role,
+      content: m.content
+    }));
+
     setMessages(currentMessages);
     setInput("");
     setIsGenerating(true);
-    setActiveTab("thinking"); // Switch to thinking tab immediately
+    setActiveTab("thinking"); // Switch to thinking tab while waiting
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: currentMessages }),
+        body: JSON.stringify({ messages: apiMessages }),
       });
 
       const data = await response.json();
-      let rawReply = data.message || "No response";
       
-      let thought = "";
-      let finalContent = rawReply;
-
-      if (rawReply.includes("</think>")) {
-        const parts = rawReply.split("</think>");
-        thought = parts[0].replace("<think>", "").trim();
-        finalContent = parts[1] ? parts[1].trim() : "";
-      } else if (rawReply.includes("<think>")) {
-        thought = rawReply.replace("<think>", "").trim();
-        finalContent = "";
-      }
-
       const assistantMessage: Message = { 
         role: "assistant", 
-        content: finalContent || "(Completed thinking - see thought tab)",
-        thinking: thought || "(No thoughts generated)"
+        content: data.message || "(No code generated)",
+        thinking: data.thinking || "(No thoughts generated)"
       };
       
       setMessages((prev) => [...prev, assistantMessage]);
@@ -114,7 +108,9 @@ export default function Home() {
             messages.map((msg, idx) => (
               <div key={idx} className={`mb-4 p-3 rounded-lg ${msg.role === 'user' ? 'bg-blue-900 text-right' : 'bg-gray-800 text-left'}`}>
                 <pre className="whitespace-pre-wrap font-mono text-sm">
-                  {activeTab === 'thinking' ? (msg.thinking || "(No thoughts generated)") : msg.content}
+                  {activeTab === 'thinking' 
+                    ? (msg.thinking || "(No thoughts generated)") 
+                    : msg.content}
                 </pre>
               </div>
             ))
@@ -145,5 +141,5 @@ export default function Home() {
       </div>
     </main>
   );
-              }
-                         
+                            }
+        
