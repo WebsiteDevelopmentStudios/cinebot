@@ -13,16 +13,28 @@ export async function POST(req: Request) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "mistral",
+        model: "openai",
         messages: [systemPrompt, ...messages]
       })
     });
 
-    const data = await response.json();
-    
-    const reply = data.choices && data.choices[0] && data.choices[0].message 
-      ? data.choices[0].message.content 
-      : "Error: Could not get response from AI.";
+    const text = await response.text();
+    let reply = "Error: Could not get response from AI.";
+
+    try {
+      const data = JSON.parse(text);
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        reply = data.choices[0].message.content;
+      } else {
+        // If it's JSON but wrong format, output the raw JSON so we can see what it is
+        reply = "AI returned unexpected JSON: " + JSON.stringify(data);
+      }
+    } catch {
+      // If it's not JSON, it's probably just plain text from the AI
+      if (text.length > 0) {
+        reply = text;
+      }
+    }
 
     return new Response(JSON.stringify({ message: reply }), {
       headers: { "Content-Type": "application/json" }
@@ -30,5 +42,5 @@ export async function POST(req: Request) {
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-                           }
+}
   
