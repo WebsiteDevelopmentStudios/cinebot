@@ -7,15 +7,15 @@ export async function POST(req: Request) {
   };
 
   try {
-    const response = await fetch("https://text.pollinations.ai/openai", {
+    const response = await fetch("https://api.pollinations.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "openai",
+        model: "openai", // GPT-4o-mini
         messages: [systemPrompt, ...messages],
-        referrer: "cinebot-app" // This tells Pollinations we are a free anonymous user
+        referrer: "cinebot-app"
       })
     });
 
@@ -41,5 +41,5 @@ export async function POST(req: Request) {
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-        }
-  
+    }
+      
