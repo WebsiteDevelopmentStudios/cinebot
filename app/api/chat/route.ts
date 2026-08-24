@@ -22,7 +22,8 @@ export async function POST(req: Request) {
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile", // Smarter model that obeys better
+        // Alibaba/Qwen coder model - best for unrestricted coding
+        model: "qwen/qwen3.6-27b", 
         messages: [systemPrompt, ...messages]
       })
     });
@@ -42,5 +43,5 @@ export async function POST(req: Request) {
   } catch (error: any) {
     return new Response(JSON.stringify({ message: error.message }), { status: 500 });
   }
-      }
-    
+  }
+                                        
