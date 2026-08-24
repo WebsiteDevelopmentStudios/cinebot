@@ -14,7 +14,8 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: "openai",
-        messages: [systemPrompt, ...messages]
+        messages: [systemPrompt, ...messages],
+        referrer: "cinebot-app" // This tells Pollinations we are a free anonymous user
       })
     });
 
@@ -26,11 +27,9 @@ export async function POST(req: Request) {
       if (data.choices && data.choices[0] && data.choices[0].message) {
         reply = data.choices[0].message.content;
       } else {
-        // If it's JSON but wrong format, output the raw JSON so we can see what it is
         reply = "AI returned unexpected JSON: " + JSON.stringify(data);
       }
     } catch {
-      // If it's not JSON, it's probably just plain text from the AI
       if (text.length > 0) {
         reply = text;
       }
@@ -42,5 +41,5 @@ export async function POST(req: Request) {
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-}
+        }
   
