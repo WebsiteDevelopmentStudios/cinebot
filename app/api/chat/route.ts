@@ -1,6 +1,13 @@
 export async function POST(req: Request) {
   const { messages } = await req.json();
-  const apiKey = "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";
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    return new Response(JSON.stringify({ message: "API Key missing in Vercel Settings." }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
 
   const systemPrompt = {
     role: "system",
@@ -36,4 +43,4 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ message: error.message }), { status: 500 });
   }
         }
-        
+  
