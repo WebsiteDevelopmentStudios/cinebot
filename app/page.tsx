@@ -35,8 +35,9 @@ export default function Home() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setAttachedFiles(prev => [...prev, ...Array.from(e.target.files)]);
+    const files = e.target.files;
+    if (files) {
+      setAttachedFiles(prev => [...prev, ...Array.from(files)]);
     }
   };
 
