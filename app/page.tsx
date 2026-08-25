@@ -101,8 +101,19 @@ export default function Home() {
       let rawThinking = data.thinking || "";
       let extractedCode = "";
 
-      // Extract code from triple backticks
-      const codeRegex = /```(?:[a-zA-Z]+\n)?([\s\S]*?)```/g;
+      // 1. Extract <thinking> tags FIRST before looking for code
+      const thinkRegex = /<[Tt]hinking>([\s\S]*?)<\/[Tt]hinking>/g;
+      let thinkMatch;
+      while ((thinkMatch = thinkRegex.exec(rawReply)) !== null) {
+        rawThinking += thinkMatch[1].trim() + "\n\n";
+      }
+      // Remove the thinking tags from the main chat reply
+      if (rawThinking) {
+        rawReply = rawReply.replace(thinkRegex, "").trim();
+      }
+
+      // 2. Extract code (handles with or without language identifier)
+      const codeRegex = /```[a-zA-Z]*\n?([\s\S]*?)```/g;
       let match;
       while ((match = codeRegex.exec(rawReply)) !== null) {
         extractedCode += match[1].trim() + "\n\n";
@@ -279,5 +290,5 @@ export default function Home() {
       </div>
     </main>
   );
-    }
-      
+      }
+                            
