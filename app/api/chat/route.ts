@@ -1,6 +1,8 @@
 export async function POST(req: Request) {
   const { messages } = await req.json();
-  const apiKey = process.env.GROQ_API_KEY; // Still using the OpenRouter key you saved in Vercel
+  
+  // Reads from Vercel's "GROQ_API_KEY" variable, despite being a Bazaarlink key
+  const apiKey = process.env.GROQ_API_KEY; 
 
   if (!apiKey) {
     return new Response(JSON.stringify({ message: "API Key missing in Vercel Settings." }), {
@@ -15,17 +17,16 @@ export async function POST(req: Request) {
   };
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("https://api.bazaarlink.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://cinebot.vercel.app", 
-        "X-Title": "Uncle Ares AI"
+        "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        // The official free uncensored model
-        model: "cognitivecomputations/dolphin-llama3-8b:free", 
+        // "gpt-4o-mini" works for most OpenAI-compatible proxies. 
+        // Verify the exact model names on the Bazaarlink dashboard if this returns a model error.
+        model: "gpt-4o-mini", 
         messages: [systemPrompt, ...messages]
       })
     });
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
     if (data.choices && data.choices[0] && data.choices[0].message) {
       finalContent = data.choices[0].message.content;
     } else if (data.error) {
-      finalContent = "AI Error: " + data.error.message;
+      finalContent = "AI Error: " + JSON.stringify(data.error);
     }
 
     return new Response(JSON.stringify({ message: finalContent, thinking: "", code: "" }), {
@@ -45,4 +46,4 @@ export async function POST(req: Request) {
   } catch (error: any) {
     return new Response(JSON.stringify({ message: error.message }), { status: 500 });
   }
-      }
+                           }
