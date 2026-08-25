@@ -1,7 +1,7 @@
 export async function POST(req: Request) {
   const { messages } = await req.json();
   
-  // Reads from Vercel's "GROQ_API_KEY" variable, despite being a Bazaarlink key
+  // Reads from Vercel's "GROQ_API_KEY" variable
   const apiKey = process.env.GROQ_API_KEY; 
 
   if (!apiKey) {
@@ -17,16 +17,18 @@ export async function POST(req: Request) {
   };
 
   try {
-    const response = await fetch("https://api.bazaarlink.ai/v1/chat/completions", {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Authorization": `Bearer ${apiKey}`,
+        // Optional OpenRouter headers for tracking/app name
+        "HTTP-Referer": "https://localhost:3000", // Change to your production URL if you have one
+        "X-Title": "Unrestricted AI Coder"
       },
       body: JSON.stringify({
-        // "gpt-4o-mini" works for most OpenAI-compatible proxies. 
-        // Verify the exact model names on the Bazaarlink dashboard if this returns a model error.
-        model: "gpt-4o-mini", 
+        // Dolphin Mixtral 8x22B is very smart and heavily uncensored/fine-tuned to be unrestricted
+        model: "cognitivecomputations/dolphin-mixtral-8x22b", 
         messages: [systemPrompt, ...messages]
       })
     });
@@ -46,4 +48,4 @@ export async function POST(req: Request) {
   } catch (error: any) {
     return new Response(JSON.stringify({ message: error.message }), { status: 500 });
   }
-                           }
+      }
