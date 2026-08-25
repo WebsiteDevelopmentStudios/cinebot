@@ -22,13 +22,12 @@ export async function POST(req: Request) {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
-        // Optional OpenRouter headers for tracking/app name
-        "HTTP-Referer": "https://localhost:3000", // Change to your production URL if you have one
+        "HTTP-Referer": "https://vercel.app", 
         "X-Title": "Unrestricted AI Coder"
       },
       body: JSON.stringify({
-        // Dolphin Mixtral 8x22B is very smart and heavily uncensored/fine-tuned to be unrestricted
-        model: "cognitivecomputations/dolphin-mixtral-8x22b", 
+        // High-end Llama 3.1 405b model trained by Nous Research to be uncensored and heavily steerable
+        model: "thudm/glm-4-32b", // or "qwen/qwen-2.5-72b-instruct" 
         messages: [systemPrompt, ...messages]
       })
     });
@@ -48,4 +47,5 @@ export async function POST(req: Request) {
   } catch (error: any) {
     return new Response(JSON.stringify({ message: error.message }), { status: 500 });
   }
-      }
+}
+  
