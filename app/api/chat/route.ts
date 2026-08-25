@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         // High-end Llama 3.1 405b model trained by Nous Research to be uncensored and heavily steerable
-        model: "thudm/glm-4-32b", // or "qwen/qwen-2.5-72b-instruct" 
+        model: "qwen/qwen-2.5-72b-instruct", // or "qwen/qwen-2.5-72b-instruct" 
         messages: [systemPrompt, ...messages]
       })
     });
